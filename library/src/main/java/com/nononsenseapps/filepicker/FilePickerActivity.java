@@ -7,6 +7,7 @@
 package com.nononsenseapps.filepicker;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Environment;
 import android.support.annotation.Nullable;
 
@@ -29,5 +30,11 @@ public class FilePickerActivity extends AbstractFilePickerActivity<File> {
         fragment.setArgs(startPath != null ? startPath : Environment.getExternalStorageDirectory().getPath(),
                 mode, allowMultiple, allowCreateDir, allowExistingFile, singleClick);
         return fragment;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        System.out.println();
     }
 }

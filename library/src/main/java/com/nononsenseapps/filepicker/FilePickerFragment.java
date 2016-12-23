@@ -39,7 +39,7 @@ public class FilePickerFragment extends AbstractFilePickerFragment<File> {
      *
      * @param showHiddenItems whether hidden items should be shown or not
      */
-    public void showHiddenItems(boolean showHiddenItems){
+    public void showHiddenItems(boolean showHiddenItems) {
         this.showHiddenItems = showHiddenItems;
     }
 
@@ -49,7 +49,7 @@ public class FilePickerFragment extends AbstractFilePickerFragment<File> {
      * @return true if hidden items are shown, otherwise false
      */
 
-    public boolean areHiddenItemsShown(){
+    public boolean areHiddenItemsShown() {
         return showHiddenItems;
     }
 
@@ -328,7 +328,15 @@ public class FilePickerFragment extends AbstractFilePickerFragment<File> {
         if (!showHiddenItems && file.isHidden()) {
             return false;
         }
-        return super.isItemVisible(file);
+        if (!super.isItemVisible(file)) {
+            return false;
+        }
+        if (pattern != null && file.isFile()) {
+            if (!pattern.matcher(file.getName()).matches()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

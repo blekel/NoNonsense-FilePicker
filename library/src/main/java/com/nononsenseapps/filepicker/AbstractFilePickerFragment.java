@@ -38,6 +38,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static com.nononsenseapps.filepicker.Utils.appendPath;
 
@@ -59,6 +60,7 @@ public abstract class AbstractFilePickerFragment<T> extends Fragment
     public static final int MODE_DIR = 1;
     public static final int MODE_FILE_AND_DIR = 2;
     public static final int MODE_NEW_FILE = 3;
+
     // Where to display on open.
     public static final String KEY_START_PATH = "KEY_START_PATH";
     // See MODE_XXX constants above for possible values
@@ -73,10 +75,14 @@ public abstract class AbstractFilePickerFragment<T> extends Fragment
     public static final String KEY_SINGLE_CLICK = "KEY_SINGLE_CLICK";
     // Used for saving state.
     protected static final String KEY_CURRENT_PATH = "KEY_CURRENT_PATH";
+    // Optional filename pattern matcher.
+    protected static final String KEY_PATTERN = "KEY_PATTERN";
+
     protected final HashSet<T> mCheckedItems;
     protected final HashSet<CheckableViewHolder> mCheckedVisibleViewHolders;
     protected int mode = MODE_FILE;
     protected T mCurrentPath = null;
+    protected Pattern pattern = null;
     protected boolean allowCreateDir = false;
     protected boolean allowMultiple = false;
     protected boolean allowExistingFile = true;
@@ -123,12 +129,12 @@ public abstract class AbstractFilePickerFragment<T> extends Fragment
      * <p/>
      * The key/value-pairs listed below will be overwritten however.
      *
-     * @param startPath      path to directory the picker will show upon start
-     * @param mode           what is allowed to be selected (dirs, files, both)
-     * @param allowMultiple  selecting a single item or several?
-     * @param allowDirCreate can new directories be created?
+     * @param startPath         path to directory the picker will show upon start
+     * @param mode              what is allowed to be selected (dirs, files, both)
+     * @param allowMultiple     selecting a single item or several?
+     * @param allowDirCreate    can new directories be created?
      * @param allowExistingFile if selecting a "new" file, can existing files be chosen
-     * @param singleClick    selecting an item does not require a press on OK
+     * @param singleClick       selecting an item does not require a press on OK
      */
     public void setArgs(@Nullable final String startPath, final int mode,
                         final boolean allowMultiple, final boolean allowDirCreate,
@@ -157,6 +163,10 @@ public abstract class AbstractFilePickerFragment<T> extends Fragment
         b.putBoolean(KEY_SINGLE_CLICK, singleClick);
         b.putInt(KEY_MODE, mode);
         setArguments(b);
+    }
+
+    public void setPattern(String pattern) {
+        getArguments().putString(KEY_PATTERN, pattern);
     }
 
     @Override
@@ -191,11 +201,11 @@ public abstract class AbstractFilePickerFragment<T> extends Fragment
                 });
 
         view.findViewById(R.id.nnf_button_ok).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(final View v) {
-                        onClickOk(v);
-                    }
-                });
+            @Override
+            public void onClick(final View v) {
+                onClickOk(v);
+            }
+        });
         view.findViewById(R.id.nnf_button_ok_newfile).setOnClickListener(
                 new View.OnClickListener() {
                     @Override
@@ -236,7 +246,7 @@ public abstract class AbstractFilePickerFragment<T> extends Fragment
     }
 
     protected View inflateRootView(LayoutInflater inflater, ViewGroup container) {
-        return inflater.inflate( R.layout.nnf_fragment_filepicker, container, false);
+        return inflater.inflate(R.layout.nnf_fragment_filepicker, container, false);
     }
 
     /**
@@ -323,7 +333,6 @@ public abstract class AbstractFilePickerFragment<T> extends Fragment
     }
 
     /**
-     *
      * @return filename as entered/picked by the user for the new file
      */
     @NonNull
@@ -425,6 +434,11 @@ public abstract class AbstractFilePickerFragment<T> extends Fragment
                 if (path != null) {
                     mCurrentPath = getPath(path.trim());
                 }
+
+                String regex = savedInstanceState.getString(KEY_PATTERN);
+                if (regex != null) {
+                    pattern = Pattern.compile(regex);
+                }
             } else if (getArguments() != null) {
                 mode = getArguments().getInt(KEY_MODE, mode);
                 allowCreateDir = getArguments()
@@ -435,6 +449,7 @@ public abstract class AbstractFilePickerFragment<T> extends Fragment
                         .getBoolean(KEY_ALLOW_EXISTING_FILE, allowExistingFile);
                 singleClick = getArguments()
                         .getBoolean(KEY_SINGLE_CLICK, singleClick);
+
                 if (getArguments().containsKey(KEY_START_PATH)) {
                     String path = getArguments().getString(KEY_START_PATH);
                     if (path != null) {
@@ -445,6 +460,13 @@ public abstract class AbstractFilePickerFragment<T> extends Fragment
                             mCurrentPath = getParent(file);
                             mEditTextFileName.setText(getName(file));
                         }
+                    }
+                }
+
+                if (getArguments().containsKey(KEY_PATTERN)) {
+                    String regex = getArguments().getString(KEY_PATTERN);
+                    if (regex != null) {
+                        pattern = Pattern.compile(regex);
                     }
                 }
             }
